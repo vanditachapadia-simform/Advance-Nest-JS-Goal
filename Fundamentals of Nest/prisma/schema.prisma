@@ -1,0 +1,73 @@
+// Prisma schema for the shopping app. SQLite keeps the demo self-contained.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id     Int     @id @default(autoincrement())
+  name   String
+  // "admin" unlocks role-guarded GraphQL fields (see RolesGuard / execution context)
+  role   String  @default("customer")
+  carts  Cart[]
+  orders Order[]
+}
+
+model Product {
+  id         Int         @id @default(autoincrement())
+  name       String
+  priceCents Int
+  stock      Int         @default(0)
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+}
+
+model Cart {
+  id     Int        @id @default(autoincrement())
+  user   User       @relation(fields: [userId], references: [id])
+  userId Int
+  items  CartItem[]
+  status String     @default("open") // open | checked_out
+}
+
+model CartItem {
+  id        Int     @id @default(autoincrement())
+  cart      Cart    @relation(fields: [cartId], references: [id])
+  cartId    Int
+  product   Product @relation(fields: [productId], references: [id])
+  productId Int
+  qty       Int
+}
+
+model Order {
+  id         Int         @id @default(autoincrement())
+  user       User        @relation(fields: [userId], references: [id])
+  userId     Int
+  status     String      @default("pending") // pending | paid | failed
+  totalCents Int
+  items      OrderItem[]
+  payment    Payment?
+}
+
+model OrderItem {
+  id         Int     @id @default(autoincrement())
+  order      Order   @relation(fields: [orderId], references: [id])
+  orderId    Int
+  product    Product @relation(fields: [productId], references: [id])
+  productId  Int
+  qty        Int
+  priceCents Int
+}
+
+model Payment {
+  id          Int    @id @default(autoincrement())
+  order       Order  @relation(fields: [orderId], references: [id])
+  orderId     Int    @unique
+  provider    String
+  status      String // succeeded | failed
+  amountCents Int
+}

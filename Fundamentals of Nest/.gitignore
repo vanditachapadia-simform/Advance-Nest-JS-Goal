@@ -1,0 +1,9 @@
+node_modules/
+dist/
+coverage/
+*.log
+# Prisma SQLite database files
+prisma/*.db
+prisma/*.db-journal
+# Generated GraphQL schema
+src/schema.gql
