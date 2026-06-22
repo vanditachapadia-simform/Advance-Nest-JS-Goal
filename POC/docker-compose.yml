@@ -1,0 +1,120 @@
+# ============================================================
+# docker-compose: full local stack
+#   - mongo            : primary datastore
+#   - redis            : cache + BullMQ broker
+#   - api              : HTTP gateway (REST + WS + SSE)
+#   - user-service     : TCP microservice (3001)
+#   - shipment-service : TCP microservice (3002)
+#   - notification-svc : TCP microservice (3003)
+#
+# Usage:  docker-compose up --build
+# ============================================================
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: logistics-mongo
+    restart: unless-stopped
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ['CMD', 'mongosh', '--eval', "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: logistics-redis
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      target: production
+    container_name: logistics-api
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/logistics
+      - REDIS_HOST=redis
+      - USER_SERVICE_HOST=user-service
+      - SHIPMENT_SERVICE_HOST=shipment-service
+      - NOTIFICATION_SERVICE_HOST=notification-service
+    ports:
+      - '3000:3000'
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ['node', 'dist/main']
+
+  user-service:
+    build:
+      context: .
+      target: production
+    container_name: logistics-user-service
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/logistics
+      - REDIS_HOST=redis
+      - USER_SERVICE_HOST=0.0.0.0
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ['node', 'dist/microservices/user-service/main']
+
+  shipment-service:
+    build:
+      context: .
+      target: production
+    container_name: logistics-shipment-service
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/logistics
+      - REDIS_HOST=redis
+      - SHIPMENT_SERVICE_HOST=0.0.0.0
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ['node', 'dist/microservices/shipment-service/main']
+
+  notification-service:
+    build:
+      context: .
+      target: production
+    container_name: logistics-notification-service
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/logistics
+      - REDIS_HOST=redis
+      - NOTIFICATION_SERVICE_HOST=0.0.0.0
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ['node', 'dist/microservices/notification-service/main']
+
+volumes:
+  mongo-data:
+  redis-data:
