@@ -9,7 +9,7 @@ class SocketService {
   connect(token: string): void {
     if (this.socket?.connected) return;
 
-    this.socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000', {
+    this.socket = io(import.meta.env.VITE_SOCKET_URL || '', {
       auth: { token },
       reconnection: true,
       reconnectionAttempts: 5,
