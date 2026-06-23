@@ -15,26 +15,33 @@ const mockMessage: Message = {
   sender: { id: 'user-1', name: 'Alice', avatar: null },
 };
 
+const defaultProps = {
+  message: mockMessage,
+  isOwn: true,
+  currentUserId: 'user-1',
+  conversationId: 'conv-1',
+};
+
 describe('MessageBubble', () => {
   it('renders message content', () => {
-    render(<MessageBubble message={mockMessage} isOwn={true} />);
+    render(<MessageBubble {...defaultProps} />);
     expect(screen.getByText('Hello world!')).toBeInTheDocument();
   });
 
   it('applies own styles when isOwn is true', () => {
-    const { container } = render(<MessageBubble message={mockMessage} isOwn={true} />);
+    const { container } = render(<MessageBubble {...defaultProps} />);
     const bubble = container.querySelector('[style*="DCF8C6"]');
     expect(bubble).toBeTruthy();
   });
 
   it('shows DoneAll icon for own messages', () => {
-    render(<MessageBubble message={mockMessage} isOwn={true} />);
+    render(<MessageBubble {...defaultProps} />);
     // Status icon should be present for own messages
     expect(screen.queryByText('Hello world!')).toBeInTheDocument();
   });
 
   it('does not show status icon for others messages', () => {
-    render(<MessageBubble message={mockMessage} isOwn={false} />);
+    render(<MessageBubble {...defaultProps} isOwn={false} />);
     expect(screen.getByText('Hello world!')).toBeInTheDocument();
   });
 });

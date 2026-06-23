@@ -99,6 +99,7 @@ export default function ChatWindow({ conversation, onBack }: ChatWindowProps) {
         <MessageList
           messages={convMessages}
           currentUserId={user?.id ?? ''}
+          conversationId={conversation.id}
           typingUserIds={typingUserIds}
         />
       )}

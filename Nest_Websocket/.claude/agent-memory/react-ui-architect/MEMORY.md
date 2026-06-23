@@ -1,0 +1,1 @@
+- [Emoji Picker + Reactions Feature](project_emoji_reactions.md) — Socket events, store actions, component design decisions for emoji reactions (no external library)

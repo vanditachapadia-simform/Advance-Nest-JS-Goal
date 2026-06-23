@@ -11,7 +11,7 @@ import ProtectedRoute from './routes/ProtectedRoute';
 
 export default function App() {
   const { isAuthenticated, user } = useAuthStore();
-  const { addMessage, setTyping, markConversationRead, addOrUpdateConversation } = useChatStore();
+  const { addMessage, setTyping, markConversationRead, addOrUpdateConversation, addReaction, removeReaction } = useChatStore();
   const { setUserOnline, setUserOffline } = useUserStore();
 
   useEffect(() => {
@@ -33,8 +33,16 @@ export default function App() {
         markConversationRead(conversationId),
       ),
       socketService.onConversationUpdated((data) => {
-        if (data) addOrUpdateConversation(data);
+        // conversation_updated carries { conversationId, lastMessage } not a full Conversation;
+        // addMessage already updates the conversation list, so nothing to do here.
+        if (data?.id) addOrUpdateConversation(data);
       }),
+      socketService.onReactionAdded(({ messageId, reaction }) =>
+        addReaction(messageId, reaction),
+      ),
+      socketService.onReactionRemoved(({ messageId, userId, emoji }) =>
+        removeReaction(messageId, userId, emoji),
+      ),
     ];
 
     return () => unsubs.forEach((unsub) => unsub());

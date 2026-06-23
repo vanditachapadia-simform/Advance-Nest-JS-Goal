@@ -7,10 +7,16 @@ import type { Message } from '../types';
 interface MessageListProps {
   messages: Message[];
   currentUserId: string;
+  conversationId: string;
   typingUserIds: Set<string>;
 }
 
-export default function MessageList({ messages, currentUserId, typingUserIds }: MessageListProps) {
+export default function MessageList({
+  messages,
+  currentUserId,
+  conversationId,
+  typingUserIds,
+}: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -32,6 +38,8 @@ export default function MessageList({ messages, currentUserId, typingUserIds }: 
           key={msg.id}
           message={msg}
           isOwn={msg.senderId === currentUserId}
+          currentUserId={currentUserId}
+          conversationId={conversationId}
         />
       ))}
 

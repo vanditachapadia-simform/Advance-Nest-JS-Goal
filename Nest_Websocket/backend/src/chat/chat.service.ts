@@ -11,6 +11,11 @@ const MESSAGE_INCLUDE = {
   sender: {
     select: { id: true, name: true, avatar: true },
   },
+  reactions: {
+    include: {
+      user: { select: { id: true, name: true } },
+    },
+  },
 };
 
 const CONVERSATION_INCLUDE = {
@@ -143,6 +148,20 @@ export class ChatService {
         isRead: false,
       },
       data: { isRead: true, status: 'READ' },
+    });
+  }
+
+  async addReaction(userId: string, messageId: string, emoji: string) {
+    return this.prisma.messageReaction.upsert({
+      where: { messageId_userId_emoji: { messageId, userId, emoji } },
+      create: { messageId, userId, emoji },
+      update: {},
+    });
+  }
+
+  async removeReaction(userId: string, messageId: string, emoji: string) {
+    return this.prisma.messageReaction.deleteMany({
+      where: { messageId, userId, emoji },
     });
   }
 

@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { Box, TextField, IconButton, InputAdornment } from '@mui/material';
 import { Send, EmojiEmotions } from '@mui/icons-material';
 import { socketService } from '../socket/socket.service';
+import EmojiPicker from './EmojiPicker';
 
 interface MessageInputProps {
   conversationId: string;
@@ -11,8 +12,10 @@ interface MessageInputProps {
 
 export default function MessageInput({ conversationId, onSend, disabled }: MessageInputProps) {
   const [content, setContent] = useState('');
+  const [emojiAnchorEl, setEmojiAnchorEl] = useState<HTMLElement | null>(null);
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isTypingRef = useRef(false);
+  const textFieldRef = useRef<HTMLInputElement | null>(null);
 
   const handleTyping = useCallback(() => {
     if (!isTypingRef.current) {
@@ -49,6 +52,32 @@ export default function MessageInput({ conversationId, onSend, disabled }: Messa
     }
   };
 
+  const handleEmojiButtonClick = (e: React.MouseEvent<HTMLElement>) => {
+    setEmojiAnchorEl(e.currentTarget);
+  };
+
+  /**
+   * Insert the selected emoji at the current cursor position in the text field,
+   * or append to the end if the cursor position is unavailable.
+   */
+  const handleEmojiSelect = useCallback((emoji: string) => {
+    const input = textFieldRef.current;
+    if (input) {
+      const start = input.selectionStart ?? content.length;
+      const end = input.selectionEnd ?? content.length;
+      const next = content.slice(0, start) + emoji + content.slice(end);
+      setContent(next);
+      // Restore cursor position after the inserted emoji on next tick
+      requestAnimationFrame(() => {
+        const pos = start + emoji.length;
+        input.setSelectionRange(pos, pos);
+        input.focus();
+      });
+    } else {
+      setContent((prev) => prev + emoji);
+    }
+  }, [content]);
+
   return (
     <Box
       sx={{
@@ -61,6 +90,13 @@ export default function MessageInput({ conversationId, onSend, disabled }: Messa
         gap: 1,
       }}
     >
+      <EmojiPicker
+        anchorEl={emojiAnchorEl}
+        open={Boolean(emojiAnchorEl)}
+        onClose={() => setEmojiAnchorEl(null)}
+        onEmojiSelect={handleEmojiSelect}
+      />
+
       <TextField
         fullWidth
         multiline
@@ -75,6 +111,7 @@ export default function MessageInput({ conversationId, onSend, disabled }: Messa
         variant="outlined"
         size="small"
         disabled={disabled}
+        inputRef={textFieldRef}
         sx={{
           '& .MuiOutlinedInput-root': {
             borderRadius: 3,
@@ -85,7 +122,15 @@ export default function MessageInput({ conversationId, onSend, disabled }: Messa
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
-              <EmojiEmotions sx={{ color: '#999', cursor: 'pointer' }} />
+              <IconButton
+                size="small"
+                onClick={handleEmojiButtonClick}
+                disabled={disabled}
+                sx={{ color: '#999', p: 0.25 }}
+                aria-label="Open emoji picker"
+              >
+                <EmojiEmotions />
+              </IconButton>
             </InputAdornment>
           ),
         }}

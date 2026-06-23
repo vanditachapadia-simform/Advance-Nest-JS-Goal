@@ -1,5 +1,5 @@
 import { io, Socket } from 'socket.io-client';
-import type { Message, TypingEvent } from '../types';
+import type { Message, MessageReaction, TypingEvent } from '../types';
 
 type EventCallback<T = any> = (data: T) => void;
 
@@ -92,6 +92,28 @@ class SocketService {
   onConversationUpdated(cb: EventCallback<any>): () => void {
     this.socket?.on('conversation_updated', cb);
     return () => this.socket?.off('conversation_updated', cb);
+  }
+
+  addReaction(conversationId: string, messageId: string, emoji: string): void {
+    this.socket?.emit('add_reaction', { conversationId, messageId, emoji });
+  }
+
+  removeReaction(conversationId: string, messageId: string, emoji: string): void {
+    this.socket?.emit('remove_reaction', { conversationId, messageId, emoji });
+  }
+
+  onReactionAdded(
+    cb: EventCallback<{ messageId: string; conversationId: string; reaction: MessageReaction }>,
+  ): () => void {
+    this.socket?.on('reaction_added', cb);
+    return () => this.socket?.off('reaction_added', cb);
+  }
+
+  onReactionRemoved(
+    cb: EventCallback<{ messageId: string; conversationId: string; userId: string; emoji: string }>,
+  ): () => void {
+    this.socket?.on('reaction_removed', cb);
+    return () => this.socket?.off('reaction_removed', cb);
   }
 
   isConnected(): boolean {

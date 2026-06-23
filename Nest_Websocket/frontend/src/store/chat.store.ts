@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Conversation, Message } from '../types';
+import type { Conversation, Message, MessageReaction } from '../types';
 
 interface TypingMap {
   [conversationId: string]: Set<string>;
@@ -20,6 +20,8 @@ interface ChatState {
   setTyping: (conversationId: string, userId: string, isTyping: boolean) => void;
   markConversationRead: (conversationId: string) => void;
   incrementUnread: (conversationId: string) => void;
+  addReaction: (messageId: string, reaction: MessageReaction) => void;
+  removeReaction: (messageId: string, userId: string, emoji: string) => void;
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
@@ -123,5 +125,41 @@ export const useChatStore = create<ChatState>((set, get) => ({
         : c,
     );
     set({ conversations: updated });
+  },
+
+  addReaction: (messageId, reaction) => {
+    const { messages } = get();
+    const updated = { ...messages };
+    for (const convId of Object.keys(updated)) {
+      const idx = updated[convId].findIndex((m) => m.id === messageId);
+      if (idx >= 0) {
+        const msg = updated[convId][idx];
+        const existing = msg.reactions ?? [];
+        // Avoid duplicate reaction from same user for same emoji
+        if (existing.some((r) => r.userId === reaction.userId && r.emoji === reaction.emoji)) break;
+        updated[convId] = [...updated[convId]];
+        updated[convId][idx] = { ...msg, reactions: [...existing, reaction] };
+        break;
+      }
+    }
+    set({ messages: updated });
+  },
+
+  removeReaction: (messageId, userId, emoji) => {
+    const { messages } = get();
+    const updated = { ...messages };
+    for (const convId of Object.keys(updated)) {
+      const idx = updated[convId].findIndex((m) => m.id === messageId);
+      if (idx >= 0) {
+        const msg = updated[convId][idx];
+        const filtered = (msg.reactions ?? []).filter(
+          (r) => !(r.userId === userId && r.emoji === emoji),
+        );
+        updated[convId] = [...updated[convId]];
+        updated[convId][idx] = { ...msg, reactions: filtered };
+        break;
+      }
+    }
+    set({ messages: updated });
   },
 }));

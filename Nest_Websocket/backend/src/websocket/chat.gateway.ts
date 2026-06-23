@@ -187,6 +187,40 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
   }
 
+  @SubscribeMessage('add_reaction')
+  async handleAddReaction(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: { messageId: string; emoji: string; conversationId: string },
+  ) {
+    const reaction = await this.chatService.addReaction(client.userId, data.messageId, data.emoji);
+
+    const room = `conversation:${data.conversationId}`;
+    // Emit to all in the room (including sender) so everyone sees the update
+    this.server.to(room).emit('reaction_added', {
+      messageId: data.messageId,
+      conversationId: data.conversationId,
+      reaction: { ...reaction, userId: client.userId },
+    });
+
+    return reaction;
+  }
+
+  @SubscribeMessage('remove_reaction')
+  async handleRemoveReaction(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: { messageId: string; emoji: string; conversationId: string },
+  ) {
+    await this.chatService.removeReaction(client.userId, data.messageId, data.emoji);
+
+    const room = `conversation:${data.conversationId}`;
+    this.server.to(room).emit('reaction_removed', {
+      messageId: data.messageId,
+      conversationId: data.conversationId,
+      userId: client.userId,
+      emoji: data.emoji,
+    });
+  }
+
   // Utility: emit to all sockets of a specific user
   emitToUser(userId: string, event: string, data: any) {
     const sockets = this.userSockets.get(userId);

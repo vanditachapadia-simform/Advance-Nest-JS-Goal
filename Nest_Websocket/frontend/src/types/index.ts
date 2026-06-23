@@ -8,6 +8,15 @@ export interface User {
   createdAt: string;
 }
 
+export interface MessageReaction {
+  id: string;
+  messageId: string;
+  userId: string;
+  emoji: string;
+  createdAt: string;
+  user: Pick<User, 'id' | 'name'>;
+}
+
 export interface Message {
   id: string;
   conversationId: string;
@@ -18,6 +27,7 @@ export interface Message {
   createdAt: string;
   updatedAt: string;
   sender: Pick<User, 'id' | 'name' | 'avatar'>;
+  reactions?: MessageReaction[];
 }
 
 export interface ConversationParticipant {
