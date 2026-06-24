@@ -7,7 +7,7 @@ class SocketService {
   private socket: Socket | null = null;
 
   connect(token: string): void {
-    if (this.socket?.connected) return;
+    if (this.socket?.connected || this.socket?.active) return;
 
     this.socket = io(import.meta.env.VITE_SOCKET_URL || '', {
       auth: { token },

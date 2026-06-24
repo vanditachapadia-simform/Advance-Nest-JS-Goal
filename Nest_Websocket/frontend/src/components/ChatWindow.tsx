@@ -36,13 +36,8 @@ export default function ChatWindow({ conversation, onBack }: ChatWindowProps) {
   });
 
   useEffect(() => {
-    socketService.joinConversation(conversation.id);
     socketService.markAsRead(conversation.id);
     markConversationRead(conversation.id);
-
-    return () => {
-      socketService.leaveConversation(conversation.id);
-    };
   }, [conversation.id]);
 
   const handleSend = useCallback(
